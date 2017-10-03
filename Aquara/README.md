@@ -1,7 +1,8 @@
 # MaverickASC
-# ALPHA Release: This is a very early release and it would be wrong to even call it BETA!
+# BETA Release: Working version, tested on some devices.
 # Still working on getting the device automatically added to Smartthings.
-# v0.1: Got the battery status and device checkin working along with identifying the right device signature.
+# v 0.1: Got the battery status and device checkin working along with identifying the right device signature.
+# v 0.2: Got the structure fixed and more consistent error and debug logging
 
 If you have issues where the Xiaomi Water Leak Sensor is getting recognized at all, the here is what I had to do for it to work:
 
