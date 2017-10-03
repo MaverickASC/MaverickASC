@@ -18,11 +18,13 @@ You need the value of “XXXX”, so note it down (for lumi.sensor_wleak sensor)
 3. Put the hub in pairing mode. These devices do not show up so easily when you put the hub in pairing mode, to say the least, and even if you are trying to locate them in Live Logging (a. go to IDE, b. select your location & hub, c. go to Live Logging page).
 
 4. Follow the reset & pair process:
+
 		a. Hold the sensor down for some time till the light flashes and then turns off (takes around 1 minute or so). Key point to note that once you let go you should see a single flash (my unit was not showing this behavior, so i improvised).
 		b. To complete reset, you need to hold it down again and then wait for the light flash to turn off. Reset completes at this step.
 		c. Put it in pairing mode, quick press till it flashes, repeat if does not work (in my case it did not work).
 		
 5. IMPROVISE:
+
 		a. Remove the battery cover using a penny.
 		b. Hold the battery down with your finger and repeat the step 3.
 		c. You should see the "catchall: " show up. Close the lid.
