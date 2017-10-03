@@ -11,7 +11,7 @@ If you have issues where the Xiaomi Water Leak Sensor is getting recognized at a
 
 Or look for this entry:
 
-debug non-TV event zbjoin: {"dni":"**XXXX**","d":"YYYYYYYYYYYYYYYYYYY","capabilities":"80","endpoints":[{"simple":".....................manufacturer":"LUMI","model":"lumi.sensor_wleak.aq1"}],"parent":"FFFF","joinType":255}
+	debug non-TV event zbjoin: {"dni":"**XXXX**","d":"YYYYYYYYYYYYYYYYYYY","capabilities":"80","endpoints":[{"simple":".....................manufacturer":"LUMI","model":"lumi.sensor_wleak.aq1"}],"parent":"FFFF","joinType":255}
 
 You need the value of “XXXX”, so note it down (for lumi.sensor_wleak sensor).
 
