@@ -64,47 +64,35 @@ metadata {
 // Parse incoming device messages to generate events
 def parse(String description) {
 
-	log.debug "RAW: $description"
-    def map = [:]
-    
-    if (description?.startsWith('non-TV event zbjoin')) {
-		List cmds = zigbee.enrollResponse()
-		log.debug "enroll response: ${cmds}"
+	log.debug "AQUARA-WS RAW: $description"
+    Map map = [:]
+	
+	if (description?.startsWith('enroll request')) {
+		List cmds = enrollResponse()
+		log.debug "AQUARA-WS ENROLL RESPONSE: ${cmds}"
 		result = cmds?.collect { new physicalgraph.device.HubAction(it) }
-        return result
-	}
-    else if (description?.startsWith('catchall: ')) {
-       map = parseCatchAllMessage(description)
+	} else {
+	
+		if (description?.startsWith('catchall: ')) {
+		   map = parseCatchAllMessage(description)
+		}
+		else if (description?.startsWith('zone status')) {
+		   map = parseIasMessage(description)
+		}
+		else if (description?.startsWith('read attr -')) {
+			map = parseReportAttributeMessage(description)
+		}
+		else {
+			log.debug "AQUARA-WS UNKNOWN: $description"			// TODO: Never seen this type of event. Please report when this kind of event occurs
+		}
+		
+		log.debug "AQUARA-WS RESULT: $map"
+		def result = map ? createEvent(map) : null
     }
-    else {
-        // getEvent will handle wet dry status
-        map = zigbee.getEvent(description)
 
-        if (!map) {
-            if (description?.startsWith('zone status')) {
-                map = parseIasMessage(description)
-            } else {
-                Map descMap = zigbee.parseDescriptionAsMap(description)
-                if (descMap.clusterInt == 0x0001 && descMap.commandInt != 0x07 && descMap?.value) {
-                    map = getBatteryResult(Integer.parseInt(descMap.value, 16))
-                } else if (descMap?.clusterInt == zigbee.IAS_ZONE_CLUSTER && descMap.attrInt == zigbee.ATTRIBUTE_IAS_ZONE_STATUS && descMap?.value) {
-                    map = translateZoneStatus(new ZoneStatus(zigbee.convertToInt(descMap?.value)))
-                } else {
-                    // TODO: I have seen this type of event come through but not sure what to do with that information
-                    log.debug "Map1: $map Description: $description"
-                }
-            }    
-        } else {
-            // TODO: Never seen this type of event. Please report when this kind of event occurs
-            log.debug "Map2: $map Description: $description"
-        }
-    }
-    
-    log.debug "Result: $map"
-    def result = map ? createEvent(map) : [:]
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
     sendEvent(name: "lastCheckin", value: now)
-  
+
 	return result
 }
 
@@ -124,9 +112,9 @@ private Map getMoistureResult(value) {
 	
 	def descriptionText
 	if (value == "wet")
-		descriptionText = '{{ device.displayName }} is wet'
+		descriptionText = '${device.displayName} is wet'
 	else
-		descriptionText = '{{ device.displayName }} is dry'
+		descriptionText = '${device.displayName} is dry'
 	return [
 			name           : 'water',
 			value          : value,
@@ -149,8 +137,27 @@ private Map parseCatchAllMessage(String description) {
 		}
 	}
     
-    log.debug "Result: $result"
+    log.debug "AQUARA-WS RESULT: $result"
 	return result
+}
+
+private Map parseReportAttributeMessage(String description) {
+
+	Map descMap = (description - "read attr - ").split(",").inject([:]) { map, param ->
+		def nameAndValue = param.split(":")
+		map += [(nameAndValue[0].trim()):nameAndValue[1].trim()]
+	}
+	log.debug "AQUARA-WS DM: $descMap"
+
+	Map resultMap = [:]
+	if (descMap.cluster == "0001" && descMap.attrId == "0020") {
+		resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
+	} else {
+		//TODO: Find out what this is being used for?
+		log.debug "AQUARA-WS UNKNOWN DM: $descMap"
+	}
+
+	return resultMap
 }
 
 private Map getBatteryResult(rawValue) {
@@ -161,7 +168,7 @@ private Map getBatteryResult(rawValue) {
 
     result.name = 'battery'
 	result.translatable = true
-	result.descriptionText = "{{ device.displayName }} battery was {{ value }}%"
+	result.descriptionText = "${device.displayName} battery was ${battLevel}%"
     result.value = Math.min(100, battLevel)
 
 	return result
@@ -171,7 +178,7 @@ private Map getBatteryResult(rawValue) {
 
 def refresh() {
 
-	log.debug "Refreshing Battery"
+	log.debug "AQUARA-WS: Refreshing Battery"
 	def refreshCmds = [
 		"st rattr 0x${device.deviceNetworkId} 1 1 0x00", "delay 2000",
 		"st rattr 0x${device.deviceNetworkId} 1 1 0x20", "delay 2000"
@@ -185,14 +192,14 @@ def configure() {
 	// enrolls with default periodic reporting until newer 5 min interval is confirmed
 	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
 
-	log.debug "Configuring Reporting and Bindings."
+	log.debug "AQUARA-WS: Configuring Reporting and Bindings."
 	// temperature minReportTime 30 seconds, maxReportTime 5 min. Reporting interval if no activity
 	// battery minReport 30 seconds, maxReportTime 6 hrs by default
 	return refresh() // send refresh cmds as part of config
 }
 
 def enrollResponse() {
-	log.debug "Sending enroll response"
+	log.debug "AQUARA-WS: Sending Enroll Response"
 	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
 	[
 		//Resending the CIE in case the enroll request is sent before CIE is written
