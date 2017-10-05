@@ -65,7 +65,7 @@ metadata {
 def parse(String description) {
 
 	log.debug "AQUARA-WS RAW: $description"
-    Map map = [:]
+    	Map map = [:]
 	
 	if ((description?.startsWith('enroll request')) || description?.startsWith('zbjoin:') || description?.startsWith('non-TV event zbjoin:')) {
 		List cmds = enrollResponse()
@@ -87,7 +87,7 @@ def parse(String description) {
 		}
 		
 		log.debug "AQUARA-WS RESULT: $map"
-		def result = map ? createEvent(map) : null
+		def result = map ? createEvent(map) : [:]
     }
 
     def now = new Date().format("yyyy MMM dd EEE h:mm:ss a", location.timeZone)
