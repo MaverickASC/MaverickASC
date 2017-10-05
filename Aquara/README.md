@@ -16,7 +16,13 @@ Or look for this entry:
 
 You need the value of “XXXX”, so note it down (for lumi.sensor_wleak sensor).
 
-3. Put the hub in pairing mode. These devices do not show up so easily when you put the hub in pairing mode, to say the least, and even if you are trying to locate them in Live Logging (a. go to IDE, b. select your location & hub, c. go to Live Logging page).
+3. Put the hub in pairing mode. These devices do not show up so easily when you put the hub in pairing mode, to say the least, and even if you are trying to locate them in Live Logging (a. go to IDE, b. select your location & hub, c. go to Live Logging page).Alternatively its recommended to use List Events on the HUB (a. go to IDE, b. select your hub, c. go to List Events page) for easily looking for this information. 
+
+NOTE: Not all catchall: can help you identify the device. Some catchall: is related to device metadata and battery information for existing devices. You are looking for catchall: with the device signature like so 
+
+	"01 0104 0402 01 03 0000 0003 0001 01 0019"
+
+in it. So be careful with false positives!
 
 4. Follow the reset & pair process:
 
@@ -31,6 +37,7 @@ You need the value of “XXXX”, so note it down (for lumi.sensor_wleak sensor)
 		c. You should see the "catchall: " show up. Close the lid.
 		
 6. Add the device from IDE using steps mentioned in Step 1. Change the device type to “Xiaomi Aqara Water Sensor” from the list.
-6. Pairing is now complete. You now need to establish the link between the sensor and the device by dunking the sensor in a bowl of water filled shallow, just enough to produce the water leak effect!
+7. IMPORTANT: Go back to Smarthings app and “Add a thing” (even if you see the device in the list) and then pair. Pairing should now complete.
+8. You now need to establish the link between the sensor and the device by dunking the sensor in a bowl of water filled shallow, just enough to produce the water leak effect!
 
 Using the custom device handler you should be able to get the battery status and also device checkin every 1 hour.
