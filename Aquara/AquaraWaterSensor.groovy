@@ -67,7 +67,7 @@ def parse(String description) {
 	log.debug "AQUARA-WS RAW: $description"
     Map map = [:]
 	
-	if (description?.startsWith('enroll request')) {
+	if ((description?.startsWith('enroll request')) || description?.startsWith('zbjoin:') || description?.startsWith('non-TV event zbjoin:')) {
 		List cmds = enrollResponse()
 		log.debug "AQUARA-WS ENROLL RESPONSE: ${cmds}"
 		result = cmds?.collect { new physicalgraph.device.HubAction(it) }
@@ -112,9 +112,9 @@ private Map getMoistureResult(value) {
 	
 	def descriptionText
 	if (value == "wet")
-		descriptionText = '${device.displayName} is wet'
+		descriptionText = '{{device.displayName}} is wet'
 	else
-		descriptionText = '${device.displayName} is dry'
+		descriptionText = '{{device.displayName}} is dry'
 	return [
 			name           : 'water',
 			value          : value,
