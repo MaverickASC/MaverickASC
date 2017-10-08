@@ -25,7 +25,7 @@ metadata {
         
         command "enrollResponse"
 
-        fingerprint profileId: "0104", deviceId: "0104", inClusters: "0000 0003 0001", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_wleak.aq1", deviceJoinName: "Aqara Water Leak Sensor"
+        fingerprint inClusters: "0000 0003 0001", outClusters: "0019", manufacturer: "LUMI", model: "lumi.sensor_wleak.aq1", deviceJoinName: "Aqara Water Leak Sensor"
     }
 
 	simulator {
@@ -47,17 +47,29 @@ metadata {
 				attributeState "dry", label: "Dry", icon: "st.alarm.water.dry", backgroundColor: "#ffffff"
 				attributeState "wet", label: "Wet", icon: "st.alarm.water.wet", backgroundColor: "#00A0DC"
 			}
+            tileAttribute("device.lastCheckin", key: "SECONDARY_CONTROL") {
+				attributeState("default", label:'Last Update: ${currentValue}',icon: "st.Health & Wellness.health9")
+			}
 		}
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh"
         }
         
         valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {
-			state "default", label:'${currentValue}% battery', unit:""
+			state "default", label:'${currentValue}% battery', unit:"",
+            backgroundColors: [
+							[value: 10, color: "#bc2323"],
+							[value: 25, color: "#f1d801"],
+							[value: 50, color: "#44b621"]
+					]
+		}
+        
+        standardTile("configure", "device.configure", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
+			state "configure", label:'', action:"configuration.configure", icon:"st.secondary.configure"
 		}
         
         main "water"
-        details(["water", "battery", "refresh"])
+        details(["water", "battery", "refresh","configure"])
     }
 }
 
@@ -113,9 +125,9 @@ private Map getMoistureResult(value) {
 	
 	def descriptionText
 	if (value == "wet")
-		descriptionText = '{{device.displayName}} is wet'
+		descriptionText = "${device.displayName} is wet"
 	else
-		descriptionText = '{{device.displayName}} is dry'
+		descriptionText = "${device.displayName} is dry"
 	return [
 			name           : 'water',
 			value          : value,
@@ -153,10 +165,14 @@ private Map parseReportAttributeMessage(String description) {
 	Map resultMap = [:]
 	if (descMap.cluster == "0001" && descMap.attrId == "0020") {
 		resultMap = getBatteryResult(Integer.parseInt(descMap.value, 16))
+	} else if (descMap.cluster == "0000" && descMap.attrId == "0005") {
+    	// [raw:XXXXXXXX…1000, dni:6C0D, endpoint:01, cluster:0000, size:7c, attrId:0005, encoding:42, value:XXXXXXXX…1000]
+		// IGNORE this as according to Zigbee Cluster information https://gist.github.com/manup/d5e81c349df0cf4d82eadd9689211d60#file-general-xml-L149 
+        // the attribute 0005 of cluster 0000 is just model identifier 
+		log.debug "AQUARA-WS: Ignoring Model Identifier cluster"
 	} else {
-		//TODO: Find out what this is being used for?
-		log.debug "AQUARA-WS UNKNOWN DM: $descMap"
-	}
+    	log.debug "AQUARA-WS: Please report this event to the developer with these details. DM: $descMap "
+    }
 
 	return resultMap
 }
@@ -180,6 +196,7 @@ private Map getBatteryResult(rawValue) {
 def refresh() {
 
 	log.debug "AQUARA-WS: Refreshing Battery"
+    
 	def refreshCmds = [
 		"st rattr 0x${device.deviceNetworkId} 1 1 0x00", "delay 2000",
 		"st rattr 0x${device.deviceNetworkId} 1 1 0x20", "delay 2000"
@@ -192,24 +209,35 @@ def configure() {
 	// Device-Watch allows 2 check-in misses from device + ping (plus 1 min lag time)
 	// enrolls with default periodic reporting until newer 5 min interval is confirmed
 	sendEvent(name: "checkInterval", value: 2 * 60 * 60 + 1 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-
+	
 	log.debug "AQUARA-WS: Configuring Reporting and Bindings."
-	// temperature minReportTime 30 seconds, maxReportTime 5 min. Reporting interval if no activity
-	// battery minReport 30 seconds, maxReportTime 6 hrs by default
-	return refresh() // send refresh cmds as part of config
+    
+	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
+
+	device.endpointId = 1
+	def configureCmds = [
+    	"delay 1000",
+		"zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
+		"send 0x${device.deviceNetworkId} 1 1", "delay 2000"
+	]
+    
+	return configureCmds + zigbee.batteryConfig() + refresh() // send refresh cmds as part of config
 }
 
 def enrollResponse() {
 	log.debug "AQUARA-WS: Sending Enroll Response"
 	String zigbeeEui = swapEndianHex(device.hub.zigbeeEui)
-	[
+    
+    def enrollCmds = [
 		//Resending the CIE in case the enroll request is sent before CIE is written
 		"zcl global write 0x500 0x10 0xf0 {${zigbeeEui}}", "delay 200",
-		"send 0x${device.deviceNetworkId} 1 ${endpointId}", "delay 2000",
+		"send 0x${device.deviceNetworkId} 1 1", "delay 2000",
 		//Enroll Response
 		"raw 0x500 {01 23 00 00 00}", "delay 200",
 		"send 0x${device.deviceNetworkId} 1 1", "delay 2000"
 	]
+    
+    return enrollCmds
 }
 
 // ***************** SUPPORTING FUNCTIONS *************************
