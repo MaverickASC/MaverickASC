@@ -6,7 +6,7 @@
 
 If you have issues where the Xiaomi Water Leak Sensor is getting recognized at all, the here is what I had to do for it to work:
 
-1. Go to http://ide.smartthings.com and add the Xiaomi Aqara Water Sensor custom Device Handler located in this repository. (a. go to IDE, b. select your location & /or hub, c. go to Device Handlers, d. Click "Create a new device handler" on the right e. Click the TAB "From Code" f. Paste the code in the .groovy file).
+1. Go to http://ide.smartthings.com and add the Xiaomi Aqara Water Sensor custom Device Handler located in this repository. (a. go to IDE, b. select your location & /or hub, c. go to Device Handlers, d. Click "Settings" on the top left e. Click on "Add new repository" and add repository Owner: MaverickASC Name: MaverickASC Branch: master g. Click on "Update from Repo" and select MaverickASC h. Check the checkbox "devicetypes/AquaraWaterSensor.groovy" and "Publish" and click on "Execute Update"
 
 2. Look at this thread: https://community.smartthings.com/t/xiaomi-zigbee-outlet-steps-to-pair-any-xiaomi-zigbee-device/67582 for instructions on how to pair Xiaomi devices in general. Keep this information in mind as you are looking for "catchall: " (without quotes) to show up in IDE (http://ide.smartthings.com).
 
